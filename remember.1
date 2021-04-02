@@ -1,0 +1,46 @@
+.Dd $Mdocdate$
+.Dt REMEMBER 1
+.Sh NAME
+.Nm remember
+.Nd cache results of commands
+.Sh SYNOPSIS
+.Nm
+.Ar command...
+.Sh DESCRIPTION
+.Nm
+remembers md5 checksum of stdin, and saves it to
+.Pa $REMEMBER_DIR
+(default
+.Pa $XDG_CACHE_DIR/remember )
+directory as
+.Pa HASH1-HASH2
+file, where HASH1 is MD5 hash of
+.Ql $@
+arguments passed to
+.Nm ,
+and HASH2 is MD5 checksum of standard input.
+.Sh FILES
+Directory
+.Pa $REMEMBER_DIR
+must exist before the first run.
+.Sh EXAMPLES
+You can invoke
+.Nm :
+.Bd -literal
+  $ < FILE_IN remember command > FILE_OUT
+.Ed
+.Pp
+This will create a file in
+.Pa $REMEMBER_DIR/HASH1-HASH2 ,
+Each consecutive call of command,
+if preceded by
+.Nm ,
+will return contents of that cached file, and avoid running the command at all.
+.Sh CAVEATS
+.Nm
+only recognises commands passed to it, not what they do.  Running it with a program
+which changed but has the same name is going to result in a Bad Time!
+.Sh SEE ALSO
+.Xr md5sum 1
+.Sh AUTHORS
+.An Piotr Oleskiewicz

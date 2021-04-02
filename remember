@@ -1,0 +1,21 @@
+#!/bin/sh -e
+#
+# remember
+
+REMEMBER_DIR="${REMEMBER_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/remember}"
+
+tmp="$(mktemp)"
+trap 'rm $tmp' EXIT
+cat - > "$tmp"
+
+sum_args="$(echo "$@" | md5sum | cut -d' ' -f1)"
+sum_input="$(md5sum "$tmp" | cut -d' ' -f1)"
+cachefile="$REMEMBER_DIR/$sum_args-$sum_input"
+
+if [ -f "$cachefile" ]
+then
+	cat "$cachefile"
+else
+	>&2 echo "$sum_args-$sum_input"
+	< "$tmp" exec "$@" | tee "$cachefile"
+fi

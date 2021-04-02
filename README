@@ -1,0 +1,50 @@
+remember
+========
+simple memoization for deterministic, repeatable shell processes
+
+let's say there is a long-running process which you need to cache for later usage, i.e.
+converting a photo to black and white version.  You can invoke
+
+	$ < photo.jpg remember ./process.sh - - > processed.jpg
+
+and processed.jpg will get saved in a memoized directory under the following name
+
+    $REMEMBER_DIR/md5sum(string "./process.sh - -")-md5sum(contents of photo.jpg)
+
+where $REMEMBER_DIR can be set in a shell, and defaults to $XDG_CACHE_HOME/remember
+
+
+forget
+======
+to periodically clean the cache directory, you can run:
+
+    $ forget
+
+this will check files in $REMEMBER_DIR and delete them according to the age of the file,
+rescaled such that bigger files "age" faster:
+
+    maxd |\
+         | \
+         |  \
+         |   \
+         |    \
+         |     \
+         |      ..
+         |        \
+        -|- - - - - . - - - - - - - - - - - - - - - - - - - - -
+         |           ..
+         |             \
+         |              ..
+         |                ...
+         |                   ..
+         |                     ...
+         |                        ....
+         |                            ......
+    mind |                                  ...................
+         0                                              maxsize
+
+
+references
+----------
+- http <-> stdio project using memoization: https://github.com/oleskiewicz/httpipe
+- cache invalidation curve: https://0x0.st/

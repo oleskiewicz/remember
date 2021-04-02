@@ -1,0 +1,29 @@
+.Dd $Mdocdate$
+.Dt FORGET 1
+.Sh NAME
+.Nm forget
+.Nd invalidate cached results.
+.Sh SYNOPSIS
+.Nm
+.Ar [offset]
+.Sh DESCRIPTION
+.Nm
+invalidates cached files stored in
+.Pa $REMEMBER_DIR
+(default
+.Pa $XDG_CACHE_DIR/remember )
+directory based on their timestamps.
+.Sh EXAMPLES
+Calling
+.Nm :
+.Bd -literal
+  $ forget.sh -v-1m
+.Ed
+.Pp
+would delete all files older than one month from cache directory (this is the same as
+the default behaviour, without any arguments).
+.Sh SEE ALSO
+.Xr date 1
+for list of time offset modifiers.
+.Sh AUTHORS
+.An Piotr Oleskiewicz
