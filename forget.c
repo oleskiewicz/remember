@@ -1,13 +1,13 @@
 #include <dirent.h>
 #include <err.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
+#include <sys/errno.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/errno.h>
 #include <unistd.h>
 
 
@@ -17,27 +17,7 @@ usage(char *argv0)
 	errx(EINVAL, "usage: %s TODO", argv0);
 }
 
-//  days
-//    maxd |\
-//         | \
-//         |  \
-//         |   \
-//         |    \
-//         |     \
-//         |      ..
-//         |        \
-//        -|- - - - - . - - - - - - - - - - - - - - - - - - - - -
-//         |           ..
-//         |             \
-//         |              ..
-//         |                ...
-//         |                   ..
-//         |                     ...
-//         |                        ....
-//         |                            ......
-//    mind |                                  ...................
-//         0                                                 maxs
-//
+
 static inline double
 maxage(double size, double days, double mind, double maxd, double maxs)
 {
@@ -46,14 +26,15 @@ maxage(double size, double days, double mind, double maxd, double maxs)
 
 
 void
-get_cachedir(char *cachedir) {
+get_cachedir(char *remember_dir)
+{
 	char *buf;
 	if ((buf = getenv("REMEMBER_DIR")))
-		strcpy(cachedir, buf);
+		strcpy(remember_dir, buf);
 	else if ((buf = getenv("XDG_CACHE_HOME")))
-		sprintf(cachedir, "%s/remember", buf);
+		sprintf(remember_dir, "%s/remember", buf);
 	else if ((buf = getenv("HOME")))
-		sprintf(cachedir, "%s/.cache/remember", buf);
+		sprintf(remember_dir, "%s/.cache/remember", buf);
 	else
 		errx(1, "couldn't assign cache directory\n");
 }
@@ -62,10 +43,10 @@ get_cachedir(char *cachedir) {
 int
 main(int argc, char *argv[])
 {
-	DIR *dir;
-	struct dirent *ent;
-	struct stat ent_stat;
-	char cachedir[BUFSIZ] = {0};
+	DIR *d;
+	struct dirent *e;
+	struct stat e_st;
+	char remember_dir[BUFSIZ] = {0};
 	char fpath[BUFSIZ];
 	long long fsize;
 	long fmtime;
@@ -74,18 +55,16 @@ main(int argc, char *argv[])
 	double mage;
 	/* int xtime; */
 	/* char xtime_s[3]; */
+	bool dryrunflag = false;
+	bool verboseflag = false;
 
 	gettimeofday(&now, NULL);
-	get_cachedir(cachedir);
-	printf("%s\n", cachedir);
-
-	bool dryrunflag = 0;
-	bool verboseflag = 0;
+	get_cachedir(remember_dir);
 
 	int opt;
-	while ((opt = getopt(argc, argv, "C:hnS:v")) != -1) {
+	while ((opt = getopt(argc, argv, "d:hnS:v")) != -1) {
 		switch (opt) {
-			case 'C': strcpy(cachedir, optarg); break;
+			case 'd': strcpy(remember_dir, optarg); break;
 			case 'h': usage(argv[0]); break;
 			case 'n': dryrunflag = verboseflag = true; break;
 			case 'S': maxfsize = atoi(optarg); break;
@@ -93,27 +72,27 @@ main(int argc, char *argv[])
 			default: usage(argv[0]); break;
 		}
 	}
-	argc -= optind; argv += optind;
+	/* argc -= optind; argv += optind; */
 
-	if ((dir = opendir(cachedir)) == NULL) {
-		errx(ENOENT, "can't open %s\n", cachedir);
+	if ((d = opendir(remember_dir)) == NULL) {
+		errx(ENOENT, "can't open %s\n", remember_dir);
 	}
 
-	while ((ent = readdir(dir)) != NULL) {
-		if (ent->d_type != DT_REG) {
+	while ((e = readdir(d)) != NULL) {
+		if (e->d_type != DT_REG) {
 			continue;
 		}
 
 		// filepath
-		sprintf(fpath, "%s/%s", cachedir, ent->d_name);
+		sprintf(fpath, "%s/%s", remember_dir, e->d_name);
 
 		// mtime
-		stat(fpath, &ent_stat);
-		fsize = ent_stat.st_size;
-		fmtime = ent_stat.st_mtimespec.tv_sec;
+		stat(fpath, &e_st);
+		fsize = e_st.st_size;
+		fmtime = e_st.st_mtimespec.tv_sec;
 
 		/* // exectime */
-		/* strncpy(xtime_s, ent->d_name, 2); */
+		/* strncpy(xtime_s, e->d_name, 2); */
 		/* xtime = atoi(xtime_s); */
 
 		// maxage scaling
@@ -124,14 +103,13 @@ main(int argc, char *argv[])
 			printf("%lld\t%f\t%f\t%s\n", fsize, age, mage, fpath);
 		}
 
-		if (age > mage) {
-			/* if (unlink(fpath) != 0) { */
-			/* 	errx(errno, "failed to remove file %s\n", fpath); */
-			/* } */
-			printf("%s\n", fpath);
+		if (!dryrunflag && age > mage) {
+			if (unlink(fpath) != 0) {
+				errx(errno, "failed to remove file %s\n", fpath);
+			}
 		}
 	}
-	closedir(dir);
+	closedir(d);
 
 	return 0;
 }

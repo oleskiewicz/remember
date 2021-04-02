@@ -10,8 +10,8 @@ MAN1=forget.1 \
 all: $(BIN) .gitignore
 
 install: all
-	mkdir -p $(DESTDIR)$(PREFIX)/bin && install -m0755 $(BIN) $(SCRIPT) $(DESTDIR)$(PREFIX)/bin
-	mkdir -p $(DESTDIR)$(MANPREFIX)/man/man1 && install -m0644 bib.1 $(DESTDIR)$(MANPREFIX)/man/man1
+	install -m0755 $(BIN) $(SCRIPT) $(DESTDIR)$(PREFIX)/bin
+	install -m0644 $(MAN1) $(DESTDIR)$(MANPREFIX)/man/man1
 
 uninstall:
 	for bin in $(BIN); do rm -f $(DESTDIR)$(PREFIX)/bin/$$bin; done
